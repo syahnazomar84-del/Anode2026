@@ -14,109 +14,44 @@ def decimal_year(ts: pd.Timestamp) -> float:
     return ts.year + (ts - start).total_seconds() / (end - start).total_seconds()
 
 
-try:
-    from Anode_Trending import (
-        compute_retrofit_requirements,
-        derive_projected_year,
-        load_remaining_life,
-        parse_inputs_sheet,
-    )
-except ModuleNotFoundError:
-    # Fallback for deployment environments where Anode_Trending.py is not present.
-    def decimal_year(ts: pd.Timestamp) -> float:
-        start = pd.Timestamp(year=ts.year, month=1, day=1)
-        end = pd.Timestamp(year=ts.year + 1, month=1, day=1)
-        return ts.year + (ts - start).total_seconds() / (end - start).total_seconds()
+def compute_retrofit_requirements(
+    anodes: pd.DataFrame,
+    info: dict,
+    projected_year: float,
+    target_year: int,
+    elevation_threshold: float,
+) -> tuple[pd.DataFrame, dict]:
+    jul24_year = info["jul24_year"]
+    utilization = info["utilization"]
+    capacity = info["capacity"]
+    current_life_years = projected_year - jul24_year
+    target_life_years = float(target_year) - jul24_year
+    if target_life_years <= current_life_years:
+        target_life_years = current_life_years
 
-    def parse_inputs_sheet(path: str) -> dict:
-        raw = pd.read_excel(path, sheet_name="Inputs", header=None)
-        raw = raw.iloc[:, :2].copy()
-        raw.columns = ["Parameter", "Value"]
-        raw["Parameter"] = raw["Parameter"].astype(str).str.strip()
+    total_mass = anodes["ma (kg)"].sum()
+    current_demand = total_mass * utilization * capacity / (current_life_years * 8760.0)
+    required_mass = current_demand * target_life_years * 8760.0 / (utilization * capacity)
+    additional_mass = max(required_mass - total_mass, 0.0)
 
-        def get_value(needle: str):
-            m = raw["Parameter"].str.contains(needle, case=False, na=False)
-            if not m.any():
-                return None
-            return raw.loc[m, "Value"].iloc[0]
+    retrofit_rows = anodes[anodes["Anode Category"] == "Retrofit"]
+    retrofit_mass_each = float(retrofit_rows["ma (kg)"].dropna().iloc[0]) if not retrofit_rows.empty else 272.771326575
+    required_retrofit_count = int(math.ceil(additional_mass / retrofit_mass_each)) if additional_mass > 0 else 0
 
-        design_raw = get_value("Design year")
-        jul24_raw = get_value("2024 Inspection Report")
-        utilization = pd.to_numeric(get_value("Utilization factor"), errors="coerce")
-        capacity = pd.to_numeric(get_value("Electrochemical capacity"), errors="coerce")
-        design_date = pd.to_datetime(design_raw, errors="coerce")
-        jul24_date = pd.to_datetime(jul24_raw, errors="coerce")
-        design_year = decimal_year(design_date) if pd.notna(design_date) else 1995.0
-        jul24_year = decimal_year(jul24_date) if pd.notna(jul24_date) else 2024.5
-        return {
-            "design_year": design_year,
-            "jul24_year": jul24_year,
-            "utilization": float(utilization) if pd.notna(utilization) else 0.9,
-            "capacity": float(capacity) if pd.notna(capacity) else 2000.0,
-        }
+    eligible = anodes[anodes["Elevation (m)"] > elevation_threshold].copy()
+    levels = sorted(eligible["Elevation (m)"].dropna().unique().tolist(), reverse=True)
+    if not levels:
+        levels = [0.0]
+    base = required_retrofit_count // len(levels)
+    rem = required_retrofit_count % len(levels)
+    alloc = []
+    for idx, elev in enumerate(levels):
+        alloc.append({"Elevation (m)": elev, "Retrofit_Qty_Required": base + (1 if idx < rem else 0)})
+    return pd.DataFrame(alloc), {
+        "required_retrofit_count": required_retrofit_count,
+        "projected_year": projected_year,
+    }
 
-    def load_remaining_life(path: str) -> pd.DataFrame:
-        df = pd.read_excel(path, sheet_name="Remaining Life")
-        needed = ["Anode No", "Anode Category", "Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]
-        out = df[needed].copy()
-        out = out[out["Anode Category"].isin(["Original", "Retrofit"])]
-        for col in ["Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]:
-            out[col] = pd.to_numeric(out[col], errors="coerce")
-        return out.dropna(subset=["Anode No", "Anode Life", "Elevation (m)"])
-
-    def derive_projected_year(path: str, fallback_max_life: float) -> float:
-        df = pd.read_excel(path, sheet_name="Remaining Life")
-        if "Jul-24" not in df.columns:
-            return float(fallback_max_life)
-        jul24 = pd.to_numeric(df["Jul-24"], errors="coerce").dropna()
-        return float(jul24.max()) if not jul24.empty else float(fallback_max_life)
-
-    def compute_retrofit_requirements(
-        anodes: pd.DataFrame,
-        info: dict,
-        projected_year: float,
-        target_year: int,
-        elevation_threshold: float,
-    ) -> tuple[pd.DataFrame, dict]:
-        jul24_year = info["jul24_year"]
-        utilization = info["utilization"]
-        capacity = info["capacity"]
-        current_life_years = projected_year - jul24_year
-        target_life_years = float(target_year) - jul24_year
-        if target_life_years <= current_life_years:
-            target_life_years = current_life_years
-
-        total_mass = anodes["ma (kg)"].sum()
-        current_demand = total_mass * utilization * capacity / (current_life_years * 8760.0)
-        required_mass = current_demand * target_life_years * 8760.0 / (utilization * capacity)
-        additional_mass = max(required_mass - total_mass, 0.0)
-
-        retrofit_rows = anodes[anodes["Anode Category"] == "Retrofit"]
-        retrofit_mass_each = float(retrofit_rows["ma (kg)"].dropna().iloc[0]) if not retrofit_rows.empty else 272.771326575
-        required_retrofit_count = int(math.ceil(additional_mass / retrofit_mass_each)) if additional_mass > 0 else 0
-
-        eligible = anodes[anodes["Elevation (m)"] > elevation_threshold].copy()
-        levels = sorted(eligible["Elevation (m)"].dropna().unique().tolist(), reverse=True)
-        if not levels:
-            levels = [0.0]
-        base = required_retrofit_count // len(levels)
-        rem = required_retrofit_count % len(levels)
-        alloc = []
-        for idx, elev in enumerate(levels):
-            alloc.append({"Elevation (m)": elev, "Retrofit_Qty_Required": base + (1 if idx < rem else 0)})
-        return pd.DataFrame(alloc), {
-            "required_retrofit_count": required_retrofit_count,
-            "projected_year": projected_year,
-        }
-
-ANODE_PATH = os.getenv(
-    "ANODE_XLSX_PATH",
-    "/Users/syahnaz.omar/Library/CloudStorage/OneDrive-Personal/Desktop/sesco/Working File/Anode Trending.xlsx",
-)
-SKG_PATH = os.getenv(
-    "SKG_XLSX_PATH",
-    "/Users/syahnaz.omar/Library/CloudStorage/OneDrive-Personal/Desktop/sesco/Working File/SKG Database/SKG Asset Dimension 2025.xlsx",
-)
 ANODE_DATA_DIR = Path(os.getenv("ANODE_DATA_DIR", "data/anode_trending"))
 SKG_DATA_DIR = Path(os.getenv("SKG_DATA_DIR", "data/skg"))
 TARGET_YEAR = 2050
@@ -253,10 +188,9 @@ def add_theme(fig, height=320, xangle=0):
 def load_platform_meta() -> dict:
     try:
         psc_csv = SKG_DATA_DIR / "psc.csv"
-        if psc_csv.exists():
-            psc = pd.read_csv(psc_csv)
-        else:
-            psc = pd.read_excel(SKG_PATH, sheet_name="PSC", header=0)
+        if not psc_csv.exists():
+            return {}
+        psc = pd.read_csv(psc_csv)
         row = psc[psc["PLATFORM"].astype(str).str.upper() == "M1PQ-A"]
         if row.empty:
             return {}
@@ -299,48 +233,48 @@ def parse_inputs_df(raw: pd.DataFrame) -> dict:
 
 def load_remaining_life_any() -> pd.DataFrame:
     csv_path = ANODE_DATA_DIR / "remaining_life.csv"
-    if csv_path.exists():
-        df = pd.read_csv(csv_path)
-        needed = ["Anode No", "Anode Category", "Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]
-        out = df[needed].copy()
-        out = out[out["Anode Category"].isin(["Original", "Retrofit"])]
-        for col in ["Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]:
-            out[col] = pd.to_numeric(out[col], errors="coerce")
-        return out.dropna(subset=["Anode No", "Anode Life", "Elevation (m)"])
-    return load_remaining_life(ANODE_PATH)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Missing required data file: {csv_path}")
+    df = pd.read_csv(csv_path)
+    needed = ["Anode No", "Anode Category", "Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]
+    out = df[needed].copy()
+    out = out[out["Anode Category"].isin(["Original", "Retrofit"])]
+    for col in ["Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]:
+        out[col] = pd.to_numeric(out[col], errors="coerce")
+    return out.dropna(subset=["Anode No", "Anode Life", "Elevation (m)"])
 
 
 def derive_projected_year_any(fallback_max_life: float) -> float:
     csv_path = ANODE_DATA_DIR / "remaining_life.csv"
-    if csv_path.exists():
-        df = pd.read_csv(csv_path)
-        if "Jul-24" not in df.columns:
-            return float(fallback_max_life)
-        jul24 = pd.to_numeric(df["Jul-24"], errors="coerce").dropna()
-        return float(jul24.max()) if not jul24.empty else float(fallback_max_life)
-    return derive_projected_year(ANODE_PATH, fallback_max_life)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Missing required data file: {csv_path}")
+    df = pd.read_csv(csv_path)
+    if "Jul-24" not in df.columns:
+        return float(fallback_max_life)
+    jul24 = pd.to_numeric(df["Jul-24"], errors="coerce").dropna()
+    return float(jul24.max()) if not jul24.empty else float(fallback_max_life)
 
 
 def load_m1pq_any() -> pd.DataFrame:
     csv_path = ANODE_DATA_DIR / "m1pq_a.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
-    return pd.read_excel(ANODE_PATH, sheet_name="M1PQ-A")
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Missing required data file: {csv_path}")
+    return pd.read_csv(csv_path)
 
 
 def load_inputs_any() -> dict:
     csv_path = ANODE_DATA_DIR / "inputs_raw.csv"
-    if csv_path.exists():
-        raw = pd.read_csv(csv_path, header=None)
-        return parse_inputs_df(raw)
-    return parse_inputs_sheet(ANODE_PATH)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Missing required data file: {csv_path}")
+    raw = pd.read_csv(csv_path, header=None)
+    return parse_inputs_df(raw)
 
 
 def load_remaining_raw_any() -> pd.DataFrame:
     csv_path = ANODE_DATA_DIR / "remaining_life.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
-    return pd.read_excel(ANODE_PATH, sheet_name="Remaining Life")
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Missing required data file: {csv_path}")
+    return pd.read_csv(csv_path)
 
 
 def load_data():
