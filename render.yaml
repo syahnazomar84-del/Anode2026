@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: gunicorn anode_trending_2026:server --bind 0.0.0.0:$PORT --workers 2
+    startCommand: gunicorn --chdir /opt/render/project/src wsgi:server --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8
