@@ -52,8 +52,9 @@ def compute_retrofit_requirements(
         "projected_year": projected_year,
     }
 
-ANODE_DATA_DIR = Path(os.getenv("ANODE_DATA_DIR", "data/anode_trending"))
-SKG_DATA_DIR = Path(os.getenv("SKG_DATA_DIR", "data/skg"))
+BASE_DIR = Path(__file__).resolve().parent
+ANODE_DATA_DIR = Path(os.getenv("ANODE_DATA_DIR", str(BASE_DIR / "data" / "anode_trending")))
+SKG_DATA_DIR = Path(os.getenv("SKG_DATA_DIR", str(BASE_DIR / "data" / "skg")))
 TARGET_YEAR = 2050
 ELEVATION_THRESHOLD = -30.0
 
@@ -265,7 +266,13 @@ def load_m1pq_any() -> pd.DataFrame:
 def load_inputs_any() -> dict:
     csv_path = ANODE_DATA_DIR / "inputs_raw.csv"
     if not csv_path.exists():
-        raise FileNotFoundError(f"Missing required data file: {csv_path}")
+        # Keep app bootable even if optional inputs file was not uploaded.
+        return {
+            "design_year": 1995.0,
+            "jul24_year": 2024.5,
+            "utilization": 0.9,
+            "capacity": 2000.0,
+        }
     raw = pd.read_csv(csv_path, header=None)
     return parse_inputs_df(raw)
 
