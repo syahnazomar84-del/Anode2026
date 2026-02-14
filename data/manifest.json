@@ -1,0 +1,13 @@
+{
+  "anode": [
+    "inputs_raw.csv",
+    "m1pq_a.csv",
+    "remaining_life.csv",
+    "m1pq_a.json",
+    "remaining_life.json"
+  ],
+  "skg": [
+    "psc.csv",
+    "psc.json"
+  ]
+}
