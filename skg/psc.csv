@@ -1,0 +1,42 @@
+PLATFORM,FIELD,TYPE,WATER DEPTH (m),CLUSTER,PSC,OPERATING STATUS
+AJJT-A,Anjung,Wellhead,75.0,Gas 1,Kumang,Operating
+B11DR-A ,B11,Drilling,94.1,Gas 2,LNG2,Operating
+B11K-A,B11,Compression,94.1,Gas 2,LNG2,Operating
+B11P-A,B11,Production,94.1,Gas 2,LNG2,Operating
+CPDR-A,Cilipadi,Drilling,91.2,Gas 2,SK8,Operating
+D12DR-A,D12,Drilling,49.0,D35/J4/D21,LNG2,Operating
+E11B-A,E11,Bridge,71.0,Gas 2,LNG2,Operating
+E11DP-A,E11,Drilling,71.0,Gas 2,LNG2,Operating
+E11K-A,E11,Compression,71.2,Gas 2,LNG2,Operating
+E11P-A,E11,Production,71.0,Gas 2,LNG2,Operating
+E11P-B,E11,Production,71.2,Gas 2,LNG2,Operating
+E11Q-A,E11,Quarters,71.0,Gas 2,LNG2,Operating
+E11R-A,E11,Riser,71.0,Gas 2,LNG2,Operating
+E11R-AA,E11,Riser,79.2,Gas 2,LNG2,Operating
+E11R-B,E11,Riser,74.0,Gas 2,LNG2,Operating
+E11R-C,E11,Riser,67.1,Gas 2,LNG2,Operating
+E11V-A,E11,Vent,71.0,Gas 2,LNG2,Operating
+E11V-B,E11,Vent,71.0,Gas 2,LNG2,Operating
+F12JT-A,F12,Wellhead,101.2,Gas 1,Kumang,Operating
+F13EDR-A,F13,Drilling,76.9,Gas 2,LNG2,Operating
+F13WDR-A,F13,Drilling,76.7,Gas 2,LNG2,Operating
+F9JT-A,Kumang,Wellhead,94.8,Gas 1,Kumang,Operating
+JNDR-A,Jintan,Drilling,129.0,Gas 2,SK8,Operating
+KAKG-A,Kumang,Compression,77.0,Gas 1,Kumang,Operating
+KAV-A,Kumang,Vent,77.0,Gas 1,Kumang,Operating
+KSCPP-A,Kasawari,Central Processing,107.9,Gas 3,SK316,Operating
+KSDP-A,Kasawari,Drilling,107.9,Gas 3,SK316,Operating
+KSF,Kasawari,Flare,107.9,Gas 3,SK316,Operating
+KUJT-A,Kumang,Wellhead,81.0,Gas 1,Kumang,Operating
+LADR-A,Laila,Drilling,76.0,D35/J4/D21,LNG2,Operating
+M1DR-A,M1,Drilling,137.6,Gas 2,LNG2,Operating
+M1PQ-A,M1,Central Processing,137.6,Gas 2,LNG2,Operating
+M3DR-A,M3,Drilling,115.6,Gas 2,LNG2,Non Operating
+M3PQ-A,M3,Central Processing,115.6,Gas 2,LNG2,Non Operating
+NC3CP-A,NC3,Central Processing,104.3,Gas 3,SK316,Operating
+NC3DP-A,NC3,Drilling,103.5,Gas 3,SK316,Operating
+PC4DP-A,PC4,Drilling,79.7,Gas 1,Kumang,Operating
+PC4V-A,PC4,Vent,79.7,Gas 1,Kumang,Operating
+SCDR-A,SC,Drilling,70.0,Gas 2,LNG2,Operating
+SBM1,BCOT,Single Point Mooring,20.1,Terminal,Balingian,Operating
+SBM2,BIF,Single Point Mooring,20.1,Terminal,LNG2,Operating
