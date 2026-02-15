@@ -189,9 +189,13 @@ def add_theme(fig, height=320, xangle=0):
 def load_platform_meta() -> dict:
     try:
         psc_csv = SKG_DATA_DIR / "psc.csv"
-        if not psc_csv.exists():
+        psc_json = SKG_DATA_DIR / "psc.json"
+        if psc_csv.exists():
+            psc = pd.read_csv(psc_csv)
+        elif psc_json.exists():
+            psc = pd.read_json(psc_json)
+        else:
             return {}
-        psc = pd.read_csv(psc_csv)
         row = psc[psc["PLATFORM"].astype(str).str.upper() == "M1PQ-A"]
         if row.empty:
             return {}
@@ -234,9 +238,13 @@ def parse_inputs_df(raw: pd.DataFrame) -> dict:
 
 def load_remaining_life_any() -> pd.DataFrame:
     csv_path = ANODE_DATA_DIR / "remaining_life.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Missing required data file: {csv_path}")
-    df = pd.read_csv(csv_path)
+    json_path = ANODE_DATA_DIR / "remaining_life.json"
+    if csv_path.exists():
+        df = pd.read_csv(csv_path)
+    elif json_path.exists():
+        df = pd.read_json(json_path)
+    else:
+        raise FileNotFoundError(f"Missing required data file: {csv_path} or {json_path}")
     needed = ["Anode No", "Anode Category", "Elevation (m)", "ma (kg)", "Ia (A)", "tf (Y)", "Anode Life"]
     out = df[needed].copy()
     out = out[out["Anode Category"].isin(["Original", "Retrofit"])]
@@ -247,9 +255,13 @@ def load_remaining_life_any() -> pd.DataFrame:
 
 def derive_projected_year_any(fallback_max_life: float) -> float:
     csv_path = ANODE_DATA_DIR / "remaining_life.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Missing required data file: {csv_path}")
-    df = pd.read_csv(csv_path)
+    json_path = ANODE_DATA_DIR / "remaining_life.json"
+    if csv_path.exists():
+        df = pd.read_csv(csv_path)
+    elif json_path.exists():
+        df = pd.read_json(json_path)
+    else:
+        raise FileNotFoundError(f"Missing required data file: {csv_path} or {json_path}")
     if "Jul-24" not in df.columns:
         return float(fallback_max_life)
     jul24 = pd.to_numeric(df["Jul-24"], errors="coerce").dropna()
@@ -258,9 +270,12 @@ def derive_projected_year_any(fallback_max_life: float) -> float:
 
 def load_m1pq_any() -> pd.DataFrame:
     csv_path = ANODE_DATA_DIR / "m1pq_a.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Missing required data file: {csv_path}")
-    return pd.read_csv(csv_path)
+    json_path = ANODE_DATA_DIR / "m1pq_a.json"
+    if csv_path.exists():
+        return pd.read_csv(csv_path)
+    if json_path.exists():
+        return pd.read_json(json_path)
+    raise FileNotFoundError(f"Missing required data file: {csv_path} or {json_path}")
 
 
 def load_inputs_any() -> dict:
@@ -279,9 +294,12 @@ def load_inputs_any() -> dict:
 
 def load_remaining_raw_any() -> pd.DataFrame:
     csv_path = ANODE_DATA_DIR / "remaining_life.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Missing required data file: {csv_path}")
-    return pd.read_csv(csv_path)
+    json_path = ANODE_DATA_DIR / "remaining_life.json"
+    if csv_path.exists():
+        return pd.read_csv(csv_path)
+    if json_path.exists():
+        return pd.read_json(json_path)
+    raise FileNotFoundError(f"Missing required data file: {csv_path} or {json_path}")
 
 
 def load_data():
