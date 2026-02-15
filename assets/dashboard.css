@@ -1,0 +1,94 @@
+.dashboard-root {
+  --bg-primary: #f5f7fa;
+  --card-bg: #ffffff;
+  --card-alt-bg: #f8fafc;
+  --text-primary: #1f2933;
+  --text-muted: #4b5563;
+  --border-color: #e2e8f0;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --table-header-bg: #eef2f7;
+}
+
+.dashboard-root.theme-dark {
+  --bg-primary: #020617;
+  --card-bg: #0f172a;
+  --card-alt-bg: #111827;
+  --text-primary: #e5e7eb;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --table-header-bg: #1e293b;
+}
+
+.dashboard-main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metric-column {
+  width: 260px;
+  min-width: 220px;
+}
+
+.content-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  min-width: 220px;
+}
+
+@media (max-width: 1024px) {
+  .header-top {
+    flex-wrap: wrap;
+  }
+
+  .platform-card {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-root {
+    padding: 10px !important;
+  }
+
+  .dashboard-main {
+    flex-direction: column;
+  }
+
+  .metric-column,
+  .content-column,
+  .filter-item {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .metric-card {
+    margin-bottom: 8px !important;
+  }
+
+  .js-plotly-plot,
+  .plot-container {
+    width: 100% !important;
+  }
+}
